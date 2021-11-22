@@ -1,29 +1,42 @@
-/* {'a.b.c': 1} -> {a: {b: {c: 1}}} */
+/* {'a.b.c': 1, 'a.b': {d: {e: 2}}, 'a.b.d': {e: 3}} -> {a: {b: {c: 1, d: {e: 3}}}} */
 
-function dotToObject(originalObject) {
+function dotToObject(originalObjectIn) {
+  let originalObject = {};
+  if (typeof originalObjectIn === 'object' &&
+    !Array.isArray(originalObjectIn) &&
+    originalObjectIn !== null &&
+    Object.keys(originalObjectIn).length > 0) {
+    for (let k in originalObjectIn) {
+      if (k.indexOf(".") !== -1) {
+        originalObject[k] = dotToObject(originalObjectIn[k]);
+      } else {
+        originalObject[k] = originalObjectIn[k];
+      }
+    }
+  } else {
+    return originalObjectIn
+  }
+
   var result = Object.keys(originalObject).sort().reduce(
-    (obj, key) => { 
-      
+    (obj, key) => {
       let currentObj = obj;
-      
       if (key.indexOf(".") !== -1) {
-
         let keys = key.split("."),
           i, l = Math.max(1, keys.length - 1),
           singleKey;
-    
-          for (i = 0; i < l; ++i) {
-            singleKey = keys[i];
-            currentObj[singleKey] = currentObj[singleKey] || {};
-            currentObj = currentObj[singleKey];
-          }
-          
-          currentObj[keys[i]] = originalObject[key];
+
+        for (i = 0; i < l; ++i) {
+          singleKey = keys[i];
+          currentObj[singleKey] = currentObj[singleKey] || {};
+          currentObj = currentObj[singleKey];
+        }
+
+        currentObj[keys[i]] = originalObject[key];
       } else {
-        currentObj[key] = originalObject[key];
+        currentObj[key] = dotToObject(originalObject[key]);
       }
       return obj;
-    }, 
+    },
     {}
   );
   return result;
